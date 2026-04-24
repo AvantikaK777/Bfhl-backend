@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BFHL · Tree Analyser</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── Reset & Variables ──────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0b0d0f;
+      --surface:   #111416;
+      --card:      #161a1e;
+      --border:    #232830;
+      --accent:    #00e5a0;
+      --accent2:   #ff5c5c;
+      --accent3:   #ffc14d;
+      --text:      #d6dce6;
+      --muted:     #5a6375;
+      --code-bg:   #0d1117;
+      --radius:    8px;
+      --mono:      "JetBrains Mono", monospace;
+      --sans:      "Syne", sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Grid noise texture overlay ────────────────────────── */
+    body::before {
+      content: "";
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.015'%3E%3Cpath d='M0 0h40v1H0zM0 0v40h1V0z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    header {
+      position: relative;
+      padding: 3rem 2rem 2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-end;
+      gap: 2rem;
+      background: linear-gradient(180deg, #0f1318 0%, transparent 100%);
+    }
+    .logo-block { flex-shrink: 0; }
+    .logo-block .tag {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--accent);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+    .logo-block h1 {
+      font-family: var(--sans);
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+    .logo-block h1 span { color: var(--accent); }
+    .header-desc {
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 340px;
+    }
+
+    /* ── Main Layout ─────────────────────────────────────────── */
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 5rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    @media (max-width: 760px) { main { grid-template-columns: 1fr; } }
+
+    /* ── Panel ───────────────────────────────────────────────── */
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .panel-header .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 6px var(--accent);
+    }
+    .panel-header .dot.red  { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+    .panel-header .dot.amber{ background: var(--accent3); box-shadow: 0 0 6px var(--accent3); }
+    .panel-header span {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+    }
+    .panel-body { padding: 1.25rem; }
+
+    /* ── Textarea ────────────────────────────────────────────── */
+    label.field-label {
+      display: block;
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    textarea {
+      width: 100%;
+      min-height: 220px;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.7;
+      padding: 0.85rem 1rem;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    textarea:focus { border-color: var(--accent); }
+
+    .helper-text {
+      font-size: 0.65rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+      line-height: 1.6;
+    }
+
+    /* ── Button ─────────────────────────────────────────────── */
+    .btn-row { margin-top: 1rem; display: flex; gap: 0.75rem; align-items: center; }
+    button.primary {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #000;
+      background: var(--accent);
+      border: none;
+      border-radius: 6px;
+      padding: 0.65rem 1.5rem;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    button.primary:hover { opacity: 0.88; transform: translateY(-1px); }
+    button.primary:active { transform: translateY(0); }
+    button.primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    button.ghost {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.6rem 1rem;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    button.ghost:hover { color: var(--text); border-color: var(--muted); }
+
+    /* ── Spinner ─────────────────────────────────────────────── */
+    .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Error banner ────────────────────────────────────────── */
+    .error-banner {
+      display: none;
+      margin-top: 1rem;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--accent2);
+      border-radius: 6px;
+      background: rgba(255,92,92,0.07);
+      font-size: 0.75rem;
+      color: var(--accent2);
+    }
+
+    /* ── Output panel (spans full width) ─────────────────────── */
+    .output-panel {
+      grid-column: 1 / -1;
+      display: none;
+    }
+
+    /* ── Summary cards ───────────────────────────────────────── */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .summary-card {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+    }
+    .summary-card .val {
+      font-family: var(--sans);
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .summary-card .key {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      margin-top: 0.35rem;
+    }
+
+    /* ── Hierarchies ─────────────────────────────────────────── */
+    .hier-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+    .hier-card {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem 1.1rem;
+      opacity: 0;
+      transform: translateY(10px);
+      animation: fadeUp 0.35s ease forwards;
+    }
+    @keyframes fadeUp { to { opacity: 1; transform: none; } }
+
+    .hier-card.cyclic { border-color: rgba(255,92,92,0.3); }
+    .hier-card .root-label {
+      font-family: var(--sans);
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 0.15rem;
+    }
+    .hier-card .meta {
+      font-size: 0.62rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      margin-bottom: 0.75rem;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.18rem 0.5rem;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+    .badge.tree  { background: rgba(0,229,160,0.12); color: var(--accent); }
+    .badge.cycle { background: rgba(255,92,92,0.12); color: var(--accent2); }
+
+    /* ASCII tree inside each card */
+    .tree-view {
+      font-size: 0.72rem;
+      line-height: 1.75;
+      color: var(--text);
+      white-space: pre;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    /* ── Chips (invalid / duplicate) ─────────────────────────── */
+    .chips { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.5rem; }
+    .chip {
+      font-size: 0.68rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: rgba(255,193,77,0.1);
+      color: var(--accent3);
+      border: 1px solid rgba(255,193,77,0.25);
+    }
+    .chip.red {
+      background: rgba(255,92,92,0.1);
+      color: var(--accent2);
+      border-color: rgba(255,92,92,0.25);
+    }
+
+    /* ── Section label ───────────────────────────────────────── */
+    .section-label {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--muted);
+      margin-bottom: 0.6rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .section-label::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Raw JSON viewer ─────────────────────────────────────── */
+    .raw-toggle {
+      font-size: 0.65rem;
+      color: var(--muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+      font-family: var(--mono);
+      padding: 0;
+    }
+    .raw-toggle:hover { color: var(--text); }
+    .raw-json {
+      display: none;
+      margin-top: 0.75rem;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      font-size: 0.72rem;
+      line-height: 1.7;
+      color: var(--accent);
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 360px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+    }
+
+    /* ── Responsive tweaks ───────────────────────────────────── */
+    @media (max-width: 480px) {
+      header { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-block">
+    <div class="tag">SRM · Full Stack Challenge</div>
+    <h1>BF<span>HL</span></h1>
+  </div>
+  <p class="header-desc">
+    Paste comma-separated node edges (e.g. A-&gt;B, A-&gt;C) and the API will
+    parse trees, detect cycles, flag duplicates, and surface structural insights.
+  </p>
+</header>
+
+<main>
+  <!-- Input Panel -->
+  <div class="panel" style="grid-column: 1 / -1">
+    <div class="panel-header">
+      <span class="dot"></span>
+      <span>Input Edges</span>
+    </div>
+    <div class="panel-body">
+      <label class="field-label" for="edgeInput">Node Strings (comma or newline separated)</label>
+      <textarea id="edgeInput" spellcheck="false"
+        placeholder='A->B, A->C, B->D, C->E, E->F, X->Y, Y->Z, Z->X, hello, 1->2, A->'></textarea>
+      <p class="helper-text">
+        Valid format: uppercase letter → uppercase letter &nbsp;|&nbsp;
+        Self-loops and malformed entries are flagged automatically.
+      </p>
+
+      <!-- API URL override -->
+      <div style="margin-top:1rem">
+        <label class="field-label" for="apiUrl">API Base URL</label>
+        <input id="apiUrl" type="text" value="http://localhost:3001"
+          style="width:100%;background:var(--code-bg);border:1px solid var(--border);border-radius:6px;
+                 color:var(--text);font-family:var(--mono);font-size:0.78rem;padding:0.55rem 0.85rem;outline:none;">
+      </div>
+
+      <div class="btn-row">
+        <button class="primary" id="submitBtn" onclick="runAnalysis()">Analyse →</button>
+        <button class="ghost" onclick="loadExample()">Load Example</button>
+        <button class="ghost" onclick="clearAll()">Clear</button>
+        <div class="spinner" id="spinner"></div>
+      </div>
+      <div class="error-banner" id="errorBanner"></div>
+    </div>
+  </div>
+
+  <!-- Output -->
+  <div class="panel output-panel" id="outputPanel">
+    <div class="panel-header">
+      <span class="dot amber"></span>
+      <span>Analysis Result</span>
+    </div>
+    <div class="panel-body" id="outputBody"></div>
+  </div>
+</main>
+
+<script>
+// ── Utilities ────────────────────────────────────────────────────────────────
+
+function parseInput(raw) {
+  return raw
+    .split(/[\n,]+/)
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
+function showError(msg) {
+  const el = document.getElementById("errorBanner");
+  el.textContent = "⚠  " + msg;
+  el.style.display = "block";
+}
+
+function hideError() {
+  document.getElementById("errorBanner").style.display = "none";
+}
+
+function setLoading(on) {
+  document.getElementById("submitBtn").disabled = on;
+  document.getElementById("spinner").style.display = on ? "block" : "none";
+}
+
+// ── ASCII tree renderer ───────────────────────────────────────────────────────
+
+function renderAsciiTree(node, indent = "", isLast = true) {
+  const entries = Object.keys(node);
+  let lines = "";
+  entries.forEach((key, i) => {
+    const last = i === entries.length - 1;
+    const connector = last ? "└─ " : "├─ ";
+    lines += indent + connector + key + "\n";
+    const newIndent = indent + (last ? "   " : "│  ");
+    lines += renderAsciiTree(node[key], newIndent, last);
+  });
+  return lines;
+}
+
+function buildTreeDisplay(tree) {
+  const root = Object.keys(tree)[0];
+  if (!root) return "(empty)";
+  let out = root + "\n";
+  out += renderAsciiTree(tree[root]);
+  return out.trimEnd();
+}
+
+// ── Main analysis call ────────────────────────────────────────────────────────
+
+async function runAnalysis() {
+  hideError();
+  const raw = document.getElementById("edgeInput").value.trim();
+  const baseUrl = document.getElementById("apiUrl").value.trim().replace(/\/$/, "");
+
+  if (!raw) { showError("Please enter at least one edge."); return; }
+
+  const data = parseInput(raw);
+  setLoading(true);
+
+  let response, result;
+  try {
+    response = await fetch(`${baseUrl}/bfhl`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data }),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status} – ${response.statusText}`);
+    result = await response.json();
+  } catch (err) {
+    setLoading(false);
+    showError("API call failed: " + err.message);
+    return;
+  }
+
+  setLoading(false);
+  renderOutput(result);
+}
+
+// ── Render output ─────────────────────────────────────────────────────────────
+
+function renderOutput(r) {
+  const panel = document.getElementById("outputPanel");
+  const body  = document.getElementById("outputBody");
+  panel.style.display = "block";
+  panel.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  // ── Summary cards ──
+  const { total_trees, total_cycles, largest_tree_root } = r.summary;
+  let html = `
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="val">${total_trees}</div>
+      <div class="key">Valid Trees</div>
+    </div>
+    <div class="summary-card">
+      <div class="val" style="color:var(--accent2)">${total_cycles}</div>
+      <div class="key">Cyclic Groups</div>
+    </div>
+    <div class="summary-card">
+      <div class="val" style="color:var(--accent3)">${largest_tree_root || "—"}</div>
+      <div class="key">Deepest Root</div>
+    </div>
+    <div class="summary-card">
+      <div class="val" style="font-size:1.1rem;padding-top:0.3rem">${r.user_id}</div>
+      <div class="key">User ID</div>
+    </div>
+  </div>`;
+
+  // ── Hierarchies ──
+  html += `<div class="section-label">Hierarchies (${r.hierarchies.length})</div>`;
+  html += `<div class="hier-grid">`;
+  r.hierarchies.forEach((h, idx) => {
+    const isCycle = !!h.has_cycle;
+    const badge   = isCycle
+      ? `<span class="badge cycle">Cyclic</span>`
+      : `<span class="badge tree">Tree · depth ${h.depth}</span>`;
+    const treeText = isCycle
+      ? "(cycle detected — no tree structure)"
+      : buildTreeDisplay(h.tree);
+    const delay = idx * 60;
+    html += `
+    <div class="hier-card ${isCycle ? "cyclic" : ""}" style="animation-delay:${delay}ms">
+      <div class="root-label">${h.root}</div>
+      <div class="meta">${badge}</div>
+      <div class="tree-view">${escHtml(treeText)}</div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  // ── Invalid / Duplicate ──
+  if (r.invalid_entries.length || r.duplicate_edges.length) {
+    html += `<div class="section-label">Flags</div>`;
+    if (r.invalid_entries.length) {
+      html += `<div style="margin-bottom:0.75rem">
+        <div class="section-label" style="font-size:0.58rem;color:var(--accent2)">Invalid Entries</div>
+        <div class="chips">${r.invalid_entries.map(e => `<span class="chip red">${escHtml(e)}</span>`).join("")}</div>
+      </div>`;
+    }
+    if (r.duplicate_edges.length) {
+      html += `<div style="margin-bottom:1rem">
+        <div class="section-label" style="font-size:0.58rem;color:var(--accent3)">Duplicate Edges</div>
+        <div class="chips">${r.duplicate_edges.map(e => `<span class="chip">${escHtml(e)}</span>`).join("")}</div>
+      </div>`;
+    }
+  }
+
+  // ── Raw JSON ──
+  html += `<div class="section-label">Raw Response</div>
+  <button class="raw-toggle" onclick="toggleRaw(this)">Show JSON ↓</button>
+  <div class="raw-json">${escHtml(JSON.stringify(r, null, 2))}</div>`;
+
+  body.innerHTML = html;
+}
+
+function toggleRaw(btn) {
+  const raw = btn.nextElementSibling;
+  const shown = raw.style.display === "block";
+  raw.style.display = shown ? "none" : "block";
+  btn.textContent = shown ? "Show JSON ↓" : "Hide JSON ↑";
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function loadExample() {
+  document.getElementById("edgeInput").value =
+    "A->B, A->C, B->D, C->E, E->F, X->Y, Y->Z, Z->X, P->Q, Q->R, G->H, G->H, G->I, hello, 1->2, A->";
+}
+
+function clearAll() {
+  document.getElementById("edgeInput").value = "";
+  document.getElementById("outputPanel").style.display = "none";
+  hideError();
+}
+
+// Enter key shortcut
+document.getElementById("edgeInput").addEventListener("keydown", e => {
+  if (e.ctrlKey && e.key === "Enter") runAnalysis();
+});
+</script>
+</body>
+</html>
