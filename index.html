@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
   <style>
-    /* ── Reset & Variables ──────────────────────────────────── */
+   
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -35,7 +35,7 @@
       overflow-x: hidden;
     }
 
-    /* ── Grid noise texture overlay ────────────────────────── */
+   
     body::before {
       content: "";
       position: fixed; inset: 0;
@@ -44,7 +44,7 @@
       z-index: 0;
     }
 
-    /* ── Header ─────────────────────────────────────────────── */
+ 
     header {
       position: relative;
       padding: 3rem 2rem 2rem;
@@ -79,7 +79,7 @@
       max-width: 340px;
     }
 
-    /* ── Main Layout ─────────────────────────────────────────── */
+ 
     main {
       position: relative;
       z-index: 1;
@@ -92,7 +92,7 @@
     }
     @media (max-width: 760px) { main { grid-template-columns: 1fr; } }
 
-    /* ── Panel ───────────────────────────────────────────────── */
+  
     .panel {
       background: var(--card);
       border: 1px solid var(--border);
@@ -123,7 +123,7 @@
     }
     .panel-body { padding: 1.25rem; }
 
-    /* ── Textarea ────────────────────────────────────────────── */
+
     label.field-label {
       display: block;
       font-size: 0.65rem;
@@ -156,7 +156,7 @@
       line-height: 1.6;
     }
 
-    /* ── Button ─────────────────────────────────────────────── */
+ 
     .btn-row { margin-top: 1rem; display: flex; gap: 0.75rem; align-items: center; }
     button.primary {
       font-family: var(--mono);
@@ -189,7 +189,7 @@
     }
     button.ghost:hover { color: var(--text); border-color: var(--muted); }
 
-    /* ── Spinner ─────────────────────────────────────────────── */
+   
     .spinner {
       width: 14px; height: 14px;
       border: 2px solid var(--border);
@@ -200,7 +200,7 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Error banner ────────────────────────────────────────── */
+  
     .error-banner {
       display: none;
       margin-top: 1rem;
@@ -212,13 +212,12 @@
       color: var(--accent2);
     }
 
-    /* ── Output panel (spans full width) ─────────────────────── */
+   
     .output-panel {
       grid-column: 1 / -1;
       display: none;
     }
 
-    /* ── Summary cards ───────────────────────────────────────── */
     .summary-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -246,7 +245,7 @@
       margin-top: 0.35rem;
     }
 
-    /* ── Hierarchies ─────────────────────────────────────────── */
+  
     .hier-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -290,7 +289,7 @@
     .badge.tree  { background: rgba(0,229,160,0.12); color: var(--accent); }
     .badge.cycle { background: rgba(255,92,92,0.12); color: var(--accent2); }
 
-    /* ASCII tree inside each card */
+    
     .tree-view {
       font-size: 0.72rem;
       line-height: 1.75;
@@ -300,7 +299,7 @@
       scrollbar-width: thin;
     }
 
-    /* ── Chips (invalid / duplicate) ─────────────────────────── */
+   
     .chips { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.5rem; }
     .chip {
       font-size: 0.68rem;
@@ -316,7 +315,7 @@
       border-color: rgba(255,92,92,0.25);
     }
 
-    /* ── Section label ───────────────────────────────────────── */
+
     .section-label {
       font-size: 0.62rem;
       text-transform: uppercase;
@@ -334,7 +333,7 @@
       background: var(--border);
     }
 
-    /* ── Raw JSON viewer ─────────────────────────────────────── */
+  
     .raw-toggle {
       font-size: 0.65rem;
       color: var(--muted);
@@ -363,7 +362,7 @@
       scrollbar-width: thin;
     }
 
-    /* ── Responsive tweaks ───────────────────────────────────── */
+
     @media (max-width: 480px) {
       header { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
     }
@@ -373,7 +372,7 @@
 
 <header>
   <div class="logo-block">
-    <div class="tag">SRM · Full Stack Challenge</div>
+    <div class="tag">Full Stack Challenge</div>
     <h1>BF<span>HL</span></h1>
   </div>
   <p class="header-desc">
@@ -383,7 +382,7 @@
 </header>
 
 <main>
-  <!-- Input Panel -->
+ 
   <div class="panel" style="grid-column: 1 / -1">
     <div class="panel-header">
       <span class="dot"></span>
@@ -398,7 +397,7 @@
         Self-loops and malformed entries are flagged automatically.
       </p>
 
-      <!-- API URL override -->
+      
       <div style="margin-top:1rem">
         <label class="field-label" for="apiUrl">API Base URL</label>
         <input id="apiUrl" type="text" value="http://localhost:3001"
@@ -416,7 +415,7 @@
     </div>
   </div>
 
-  <!-- Output -->
+ 
   <div class="panel output-panel" id="outputPanel">
     <div class="panel-header">
       <span class="dot amber"></span>
@@ -427,7 +426,7 @@
 </main>
 
 <script>
-// ── Utilities ────────────────────────────────────────────────────────────────
+
 
 function parseInput(raw) {
   return raw
@@ -451,7 +450,7 @@ function setLoading(on) {
   document.getElementById("spinner").style.display = on ? "block" : "none";
 }
 
-// ── ASCII tree renderer ───────────────────────────────────────────────────────
+
 
 function renderAsciiTree(node, indent = "", isLast = true) {
   const entries = Object.keys(node);
@@ -474,7 +473,7 @@ function buildTreeDisplay(tree) {
   return out.trimEnd();
 }
 
-// ── Main analysis call ────────────────────────────────────────────────────────
+
 
 async function runAnalysis() {
   hideError();
@@ -505,7 +504,7 @@ async function runAnalysis() {
   renderOutput(result);
 }
 
-// ── Render output ─────────────────────────────────────────────────────────────
+
 
 function renderOutput(r) {
   const panel = document.getElementById("outputPanel");
@@ -513,7 +512,7 @@ function renderOutput(r) {
   panel.style.display = "block";
   panel.scrollIntoView({ behavior: "smooth", block: "start" });
 
-  // ── Summary cards ──
+
   const { total_trees, total_cycles, largest_tree_root } = r.summary;
   let html = `
   <div class="summary-grid">
@@ -535,7 +534,7 @@ function renderOutput(r) {
     </div>
   </div>`;
 
-  // ── Hierarchies ──
+  
   html += `<div class="section-label">Hierarchies (${r.hierarchies.length})</div>`;
   html += `<div class="hier-grid">`;
   r.hierarchies.forEach((h, idx) => {
@@ -556,7 +555,7 @@ function renderOutput(r) {
   });
   html += `</div>`;
 
-  // ── Invalid / Duplicate ──
+
   if (r.invalid_entries.length || r.duplicate_edges.length) {
     html += `<div class="section-label">Flags</div>`;
     if (r.invalid_entries.length) {
@@ -573,7 +572,7 @@ function renderOutput(r) {
     }
   }
 
-  // ── Raw JSON ──
+  
   html += `<div class="section-label">Raw Response</div>
   <button class="raw-toggle" onclick="toggleRaw(this)">Show JSON ↓</button>
   <div class="raw-json">${escHtml(JSON.stringify(r, null, 2))}</div>`;
@@ -592,7 +591,7 @@ function escHtml(s) {
   return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 function loadExample() {
   document.getElementById("edgeInput").value =
@@ -605,7 +604,7 @@ function clearAll() {
   hideError();
 }
 
-// Enter key shortcut
+
 document.getElementById("edgeInput").addEventListener("keydown", e => {
   if (e.ctrlKey && e.key === "Enter") runAnalysis();
 });
