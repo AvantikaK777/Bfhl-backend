@@ -5,27 +5,19 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ── Personal credentials ──────────────────────────────────────────────────────
-const USER_ID = "yourname_ddmmyyyy";       // ← replace with your actual details
-const EMAIL_ID = "you@college.edu";         // ← replace
-const COLLEGE_ROLL = "21CSXXXX";            // ← replace
-// ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Returns true when the string looks like "X->Y"
- * where X and Y are each exactly one uppercase A-Z letter,
- * and X ≠ Y (self-loops are invalid).
- */
+const USER_ID = "avantikak_30072005";      
+const EMAIL_ID = "kk9441@srmist.edu.in";        
+const COLLEGE_ROLL = "RA2311026020224";            
+
+
+
 function isValidEdge(s) {
   return /^[A-Z]->[A-Z]$/.test(s) && s[0] !== s[3];
 }
 
-/**
- * Separate the raw entries into three buckets:
- *   validEdges   – clean, first-seen edges ready for graph work
- *   invalidList  – entries that failed the format check
- *   duplicateList – edges seen more than once (each extra occurrence, once)
- */
+
+
 function partitionEntries(rawData) {
   const seen = new Set();
   const validEdges = [];
@@ -55,14 +47,10 @@ function partitionEntries(rawData) {
   return { validEdges, invalidList, duplicateList };
 }
 
-/**
- * Build an adjacency map and track parent counts so we can find roots.
- * Multi-parent rule: first edge that assigns a child wins; later attempts
- * to assign the same child to a different parent are silently dropped.
- */
+
 function buildGraph(edges) {
-  const children = new Map();   // node → [child, child, ...]
-  const parentOf = new Map();   // child → its ONE accepted parent
+  const children = new Map();  
+  const parentOf = new Map();   
   const allNodes = new Set();
 
   for (const edge of edges) {
@@ -70,7 +58,7 @@ function buildGraph(edges) {
     allNodes.add(parent);
     allNodes.add(child);
 
-    if (parentOf.has(child)) continue; // multi-parent: first wins
+    if (parentOf.has(child)) continue; 
 
     parentOf.set(child, parent);
     if (!children.has(parent)) children.set(parent, []);
@@ -80,9 +68,7 @@ function buildGraph(edges) {
   return { children, parentOf, allNodes };
 }
 
-/**
- * Group all nodes into connected components using union-find.
- */
+
 function connectedComponents(nodes, children) {
   const parent = new Map([...nodes].map((n) => [n, n]));
 
@@ -109,9 +95,7 @@ function connectedComponents(nodes, children) {
   return [...groups.values()];
 }
 
-/**
- * Detect a cycle inside a component using DFS (white-grey-black colouring).
- */
+
 function hasCycle(nodes, children) {
   const WHITE = 0, GREY = 1, BLACK = 2;
   const colour = new Map([...nodes].map((n) => [n, WHITE]));
@@ -119,8 +103,8 @@ function hasCycle(nodes, children) {
   function dfs(node) {
     colour.set(node, GREY);
     for (const kid of (children.get(node) || [])) {
-      if (!colour.has(kid)) continue;          // not in this component
-      if (colour.get(kid) === GREY) return true; // back-edge → cycle
+      if (!colour.has(kid)) continue;        
+      if (colour.get(kid) === GREY) return true; 
       if (colour.get(kid) === WHITE && dfs(kid)) return true;
     }
     colour.set(node, BLACK);
@@ -133,9 +117,6 @@ function hasCycle(nodes, children) {
   return false;
 }
 
-/**
- * Build a nested tree object recursively from a given root.
- */
 function buildNestedTree(root, children) {
   const obj = {};
   const stack = [[root, obj]];
@@ -155,9 +136,7 @@ function buildNestedTree(root, children) {
   return obj;
 }
 
-/**
- * Compute depth (longest root-to-leaf path in node count) via BFS.
- */
+
 function computeDepth(root, children) {
   let maxDepth = 0;
   const queue = [[root, 1]];
@@ -176,9 +155,7 @@ function computeDepth(root, children) {
   return maxDepth;
 }
 
-/**
- * Main processing function – returns the full response object.
- */
+
 function processData(rawData) {
   const { validEdges, invalidList, duplicateList } = partitionEntries(rawData);
   const { children, parentOf, allNodes } = buildGraph(validEdges);
@@ -189,18 +166,18 @@ function processData(rawData) {
   let totalCycles = 0;
 
   for (const group of components) {
-    // Find natural roots: nodes in this group that have no accepted parent
+   
     const roots = [...group].filter((n) => !parentOf.has(n)).sort();
 
     const cyclic = hasCycle(group, children);
 
     if (cyclic) {
       totalCycles++;
-      // Pure cycle: pick lex-smallest node as representative root
+
       const representative = roots.length ? roots[0] : [...group].sort()[0];
       hierarchies.push({ root: representative, tree: {}, has_cycle: true });
     } else {
-      // One component can have multiple disconnected roots after multi-parent pruning
+      
       const effectiveRoots = roots.length ? roots : [[...group].sort()[0]];
 
       for (const root of effectiveRoots) {
@@ -212,7 +189,7 @@ function processData(rawData) {
     }
   }
 
-  // Sort hierarchies for deterministic output (non-cyclic by depth desc, then lex root)
+  
   hierarchies.sort((a, b) => {
     if (a.has_cycle && !b.has_cycle) return 1;
     if (!a.has_cycle && b.has_cycle) return -1;
@@ -222,7 +199,7 @@ function processData(rawData) {
     return a.root < b.root ? -1 : 1;
   });
 
-  // largest_tree_root: deepest non-cyclic tree; lex tiebreak
+ 
   let largestRoot = "";
   let largestDepth = -1;
   for (const h of hierarchies) {
@@ -249,7 +226,7 @@ function processData(rawData) {
   };
 }
 
-// ── Routes ────────────────────────────────────────────────────────────────────
+// Routes
 
 app.post("/bfhl", (req, res) => {
   const { data } = req.body || {};
