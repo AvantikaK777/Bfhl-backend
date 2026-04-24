@@ -1,7 +1,7 @@
 {
   "name": "bfhl-api",
   "version": "1.0.0",
-  "description": "BFHL REST API – SRM Full Stack Challenge",
+  "description": "BFHL REST API –  Full Stack Challenge",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
